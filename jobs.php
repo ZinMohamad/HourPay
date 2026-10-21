@@ -1,106 +1,5 @@
 <?php
-
-require_once "config/database.php";
-
-// Job speichern
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
-
-    $arbeitgeber = trim($_POST["arbeitgeber"] ?? "");
-    $bezeichnung = trim($_POST["bezeichnung"] ?? "");
-    $stundenlohn = $_POST["stundenlohn"] ?? "";
-
-    if ($arbeitgeber != "" && $bezeichnung != ""
-        && is_numeric($stundenlohn) && $stundenlohn >= 0) {
-
-        $sql = "INSERT INTO jobs
-                (arbeitgeber, bezeichnung, stundenlohn)
-                VALUES (?, ?, ?)";
-
-        $stmt = $pdo->prepare($sql);
-
-        $stmt->execute([
-            $arbeitgeber,
-            $bezeichnung,
-            $stundenlohn
-        ]);
-
-        header("Location: jobs.php");
-        exit;
-    }
-}
-
-// Job aktualisieren
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
-
-    $job_id = $_POST["job_id"] ?? 0;
-    $arbeitgeber = trim($_POST["arbeitgeber"] ?? "");
-    $bezeichnung = trim($_POST["bezeichnung"] ?? "");
-    $stundenlohn = $_POST["stundenlohn"] ?? "";
-
-    if (filter_var($job_id, FILTER_VALIDATE_INT) && $job_id > 0
-        && $arbeitgeber != "" && $bezeichnung != ""
-        && is_numeric($stundenlohn) && $stundenlohn >= 0) {
-
-        $sql = "UPDATE jobs
-                SET arbeitgeber = ?, bezeichnung = ?, stundenlohn = ?
-                WHERE job_id = ?";
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            $arbeitgeber,
-            $bezeichnung,
-            $stundenlohn,
-            $job_id
-        ]);
-
-        header("Location: jobs.php");
-        exit;
-    }
-}
-
-// Job löschen
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["loeschen"])) {
-
-    $job_id = $_POST["job_id"] ?? 0;
-
-    if (filter_var($job_id, FILTER_VALIDATE_INT) && $job_id > 0) {
-
-        $sql = "DELETE FROM jobs WHERE job_id = ?";
-        $stmt = $pdo->prepare($sql);
-
-        try {
-            $stmt->execute([$job_id]);
-
-            header("Location: jobs.php");
-            exit;
-
-        } catch (PDOException $e) {
-            echo "Dieser Job konnte nicht gelöscht werden.";
-        }
-    }
-}
-
-$job_bearbeiten = null;
-
-if (isset($_GET["bearbeiten"])) {
-
-    $job_id = $_GET["bearbeiten"];
-
-    if (filter_var($job_id, FILTER_VALIDATE_INT) && $job_id > 0) {
-
-        $sql = "SELECT * FROM jobs WHERE job_id = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$job_id]);
-
-        $job_bearbeiten = $stmt->fetch(PDO::FETCH_ASSOC);
-    }
-}
-
-// Gespeicherte Jobs auslesen
-$sql = "SELECT * FROM jobs";
-$stmt = $pdo->query($sql);
-$jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+require_once __DIR__ . "/controllers/JobController.php";
 ?>
 
 <!DOCTYPE html>
@@ -111,7 +10,15 @@ $jobs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 <body>
 
+    <?php include __DIR__ . "/includes/navigation.php"; ?>
+
     <h1>Jobs verwalten</h1>
+
+    <?php if (!empty($fehlermeldung)): ?>
+    <p style="color: red;">
+        <?= htmlspecialchars($fehlermeldung) ?>
+    </p>
+    <?php endif; ?>
 
     <h2>Neuen Job hinzufügen</h2>
 
