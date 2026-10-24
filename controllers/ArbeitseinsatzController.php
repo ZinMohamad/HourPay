@@ -6,6 +6,7 @@ require_once __DIR__ . "/../config/database.php";
 // Models laden
 require_once __DIR__ . "/../models/Arbeitseinsatz.php";
 require_once __DIR__ . "/../models/Job.php";
+require_once __DIR__ . "/../services/ArbeitszeitService.php";
 
 // Ausgewählten Monat aus der URL auslesen
 $monat = $_GET["monat"] ?? date("Y-m");
@@ -114,6 +115,15 @@ $jobs = alleJobsLaden($pdo);
 
 // Gespeicherte Arbeitseinsätze über das Model laden
 $arbeitseinsaetze = alleArbeitseinsaetzeLaden($pdo, $monat);
+
+// Gesamtsummen über den Service berechnen
+$gesamtsummen = berechneGesamtsummen($arbeitseinsaetze);
+
+// Arbeitszeit und Verdienst pro Job berechnen
+$jobSummen = berechneJobSummen($arbeitseinsaetze);
+
+// Job-Summen über den Service berechnen
+$jobSummen = berechneJobSummen($arbeitseinsaetze);
 
 // Arbeitseinsatz löschen
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["loeschen"])) {

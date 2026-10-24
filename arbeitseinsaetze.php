@@ -121,13 +121,10 @@ require_once __DIR__ . "/controllers/ArbeitseinsatzController.php";
     </form>
 
     <?php
-    // Gesamtsummen vorbereiten
-    $gesamtminuten = 0;
-    $gesamtverdienst = 0;
+    // Gesamtsummen aus dem Controller übernehmen
+    $gesamtminuten = $gesamtsummen["minuten"];
+    $gesamtverdienst = $gesamtsummen["verdienst"];
 
-    // Summen für jeden Job vorbereiten
-    $jobSummen = [];
-    
     ?>
 
     <table border="1">
@@ -148,36 +145,18 @@ require_once __DIR__ . "/controllers/ArbeitseinsatzController.php";
         <?php foreach ($arbeitseinsaetze as $einsatz): ?>
 
             <?php
-                // Arbeitszeit in Minuten berechnen
-                $start = strtotime($einsatz["startzeit"]);
-                $ende = strtotime($einsatz["endzeit"]);
+                // Arbeitszeit über den Service berechnen
+                $arbeitsminuten = berechneArbeitsminuten(
+                    $einsatz["startzeit"],
+                    $einsatz["endzeit"],
+                    $einsatz["pause"]
+                );
 
-                $arbeitsminuten = ($ende - $start) / 60 - $einsatz["pause"];
-
-                // Arbeitsstunden und Verdienst berechnen
-                $arbeitsstunden = max(0, $arbeitsminuten / 60);
-                $verdienst = $arbeitsstunden * $einsatz["stundenlohn"];
-
-                // Gesamtsummen berechnen
-                $gesamtminuten += max(0, $arbeitsminuten);
-                $gesamtverdienst += $verdienst;
-
-                
-                // Arbeitszeit und Verdienst pro Job zusammenrechnen
-                $job_id = $einsatz["job_id"];
-
-                if (!isset($jobSummen[$job_id])) {
-                    $jobSummen[$job_id] = [
-                        "arbeitgeber" => $einsatz["arbeitgeber"],
-                        "bezeichnung" => $einsatz["bezeichnung"],
-                        "minuten" => 0,
-                        "verdienst" => 0
-                    ];
-                }
-
-                $jobSummen[$job_id]["minuten"] += max(0, $arbeitsminuten);
-                $jobSummen[$job_id]["verdienst"] += $verdienst;
-
+                // Arbeitsstunden und Verdienst über den Service berechnen
+                $verdienst = berechneVerdienst(
+                    $arbeitsminuten,
+                    $einsatz["stundenlohn"]
+                );
             ?>
 
             <tr>
