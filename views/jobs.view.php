@@ -2,107 +2,100 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>HourPay – Jobs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HourPay – Jobs verwalten</title>
+    <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-    <?php include __DIR__ . "/../includes/navigation.php"; ?>
+    <?php include __DIR__ . "/../includes/header.php"; ?>
 
-    <h1>Jobs verwalten</h1>
+    <main class="app-content">
+        <h1>Jobs verwalten</h1>
+        <p class="seitenbeschreibung">Erstelle und verwalte deine Jobs und Stundenlöhne.</p>
 
-    <?php if (!empty($fehlermeldung)): ?>
-    <p style="color: red;">
-        <?= htmlspecialchars($fehlermeldung) ?>
-    </p>
-    <?php endif; ?>
+        <?php if (!empty($fehlermeldung)): ?>
+            <div class="fehlermeldung" role="alert">
+                <?= htmlspecialchars($fehlermeldung, ENT_QUOTES, "UTF-8") ?>
+            </div>
+        <?php endif; ?>
 
-    <h2>Neuen Job hinzufügen</h2>
+        <section class="dashboard-bereich">
+            <h2><?= $job_bearbeiten ? "Job bearbeiten" : "Neuen Job hinzufügen" ?></h2>
 
-    <form method="POST">
-        <label>Arbeitgeber:</label>
-        <input type="text" name="arbeitgeber" required>
+            <form method="POST">
+                <?php if ($job_bearbeiten): ?>
+                    <input type="hidden" name="job_id" value="<?= (int) $job_bearbeiten["job_id"] ?>">
+                <?php endif; ?>
 
-        <label>Jobbezeichnung:</label>
-        <input type="text" name="bezeichnung" required>
+                <label for="arbeitgeber">Arbeitgeber:</label>
+                <input type="text" id="arbeitgeber" name="arbeitgeber"
+                    value="<?= htmlspecialchars($job_bearbeiten["arbeitgeber"] ?? "", ENT_QUOTES, "UTF-8") ?>" required>
 
-        <label>Stundenlohn (€):</label>
-        <input type="number" name="stundenlohn"
-               step="0.01" min="0" required>
+                <label for="bezeichnung">Jobbezeichnung:</label>
+                <input type="text" id="bezeichnung" name="bezeichnung"
+                    value="<?= htmlspecialchars($job_bearbeiten["bezeichnung"] ?? "", ENT_QUOTES, "UTF-8") ?>" required>
 
-        <button type="submit" name="speichern">Job speichern</button>
-    </form>
+                <label for="stundenlohn">Stundenlohn (€):</label>
+                <input type="number" id="stundenlohn" name="stundenlohn"
+                    value="<?= htmlspecialchars((string) ($job_bearbeiten["stundenlohn"] ?? ""), ENT_QUOTES, "UTF-8") ?>"
+                    step="0.01" min="0" required>
 
-     <?php if ($job_bearbeiten): ?>
+                <button type="submit" name="<?= $job_bearbeiten ? "aktualisieren" : "speichern" ?>">
+                    <?= $job_bearbeiten ? "Änderungen speichern" : "Job speichern" ?>
+                </button>
 
-        <h2>Job bearbeiten</h2>
+                <?php if ($job_bearbeiten): ?>
+                    <a href="jobs.php" class="aktion-link">Abbrechen</a>
+                <?php endif; ?>
+            </form>
+        </section>
 
-        <form method="POST">
+        <section class="dashboard-bereich">
+            <h2>Gespeicherte Jobs</h2>
 
-            <input type="hidden" name="job_id"
-                   value="<?= $job_bearbeiten["job_id"] ?>">
-
-            <label>Arbeitgeber:</label>
-            <input type="text" name="arbeitgeber"
-                   value="<?= htmlspecialchars($job_bearbeiten["arbeitgeber"]) ?>"
-                   required>
-
-            <label>Jobbezeichnung:</label>
-            <input type="text" name="bezeichnung"
-                   value="<?= htmlspecialchars($job_bearbeiten["bezeichnung"]) ?>"
-                   required>
-
-            <label>Stundenlohn (€):</label>
-            <input type="number" name="stundenlohn"
-                   value="<?= htmlspecialchars($job_bearbeiten["stundenlohn"]) ?>"
-                   step="0.01" min="0" required>
-
-            <button type="submit" name="aktualisieren">
-                Änderungen speichern
-            </button>
-
-        </form>
-
-    <?php endif; ?>
-
-    <h2>Gespeicherte Jobs</h2>
-
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Arbeitgeber</th>
-            <th>Jobbezeichnung</th>
-            <th>Stundenlohn</th>
-            <th>Aktionen</th>
-        </tr>
-
-        <?php foreach ($jobs as $job): ?>
-            <tr>
-                <td><?= $job["job_id"] ?></td>
-                <td><?= htmlspecialchars($job["arbeitgeber"]) ?></td>
-                <td><?= htmlspecialchars($job["bezeichnung"]) ?></td>
-                <td><?= htmlspecialchars($job["stundenlohn"]) ?> €</td>
-                <td>
-                    <form method="POST">
-                        <input type="hidden" name="job_id"
-                               value="<?= $job["job_id"] ?>">
-
-                        <button type="submit" name="loeschen">
-                            Löschen
-                        </button>
-                    </form>
-
-                    <form method="GET">
-                        <input type="hidden" name="bearbeiten"
-                        value="<?= $job["job_id"] ?>">
-
-                        <button type="submit">
-                            Bearbeiten
-                        </button>
-                    </form>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
+            <?php if (empty($jobs)): ?>
+                <p>Es wurden noch keine Jobs angelegt.</p>
+            <?php else: ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Arbeitgeber</th>
+                            <th>Jobbezeichnung</th>
+                            <th>Stundenlohn</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($jobs as $job): ?>
+                            <tr>
+                                <td><?= (int) $job["job_id"] ?></td>
+                                <td><?= htmlspecialchars($job["arbeitgeber"], ENT_QUOTES, "UTF-8") ?></td>
+                                <td><?= htmlspecialchars($job["bezeichnung"], ENT_QUOTES, "UTF-8") ?></td>
+                                <td><?= number_format((float) $job["stundenlohn"], 2, ",", ".") ?> €</td>
+                                <td>
+                                    <div class="tabellen-aktionen">
+                                        <form method="GET">
+                                            <button type="submit" name="bearbeiten" value="<?= (int) $job["job_id"] ?>">
+                                                Bearbeiten
+                                            </button>
+                                        </form>
+                                        <form method="POST">
+                                            <input type="hidden" name="job_id" value="<?= (int) $job["job_id"] ?>">
+                                            <button type="submit" name="loeschen" class="button-gefahr">
+                                                Löschen
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </section>
+    </main>
 
 </body>
 </html>

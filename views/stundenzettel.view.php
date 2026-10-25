@@ -1,119 +1,93 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>HourPay – Stundenzettel</title>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-    <h1>Stundenzettel</h1>
+    <?php include __DIR__ . "/../includes/header.php"; ?>
 
-    <?php include __DIR__ . "/../includes/navigation.php"; ?>
+    <main class="app-content">
+        <h1>Stundenzettel</h1>
+        <p class="seitenbeschreibung">Übersicht deiner Arbeitszeiten und Verdienste.</p>
 
-    <h2>Filter</h2>
+        <section class="dashboard-bereich">
+            <h2>Filter</h2>
+            <form method="GET">
+                <label for="monat">Monat:</label>
+                <input type="month" id="monat" name="monat"
+                    value="<?= htmlspecialchars($monat, ENT_QUOTES, "UTF-8") ?>" required>
 
-    <form method="GET">
-        <label for="monat">Monat:</label>
-        <input
-            type="month"
-            id="monat"
-            name="monat"
-            value="<?= htmlspecialchars($monat) ?>"
-            required
-        >
+                <label for="job_id">Job:</label>
+                <select id="job_id" name="job_id">
+                    <option value="0">Alle Jobs</option>
+                    <?php foreach ($jobs as $job): ?>
+                        <option value="<?= (int) $job["job_id"] ?>"
+                            <?= $job_id == $job["job_id"] ? "selected" : "" ?>>
+                            <?= htmlspecialchars($job["arbeitgeber"] . " – " . $job["bezeichnung"], ENT_QUOTES, "UTF-8") ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
 
-        <label for="job_id">Job:</label>
-        <select id="job_id" name="job_id">
-            <option value="0">Alle Jobs</option>
+                <button type="submit">Anzeigen</button>
+                <button type="submit" formaction="stundenzettel_druck.php" formtarget="_blank">
+                    Als PDF speichern
+                </button>
+            </form>
+        </section>
 
-            <?php foreach ($jobs as $job): ?>
-                <option
-                    value="<?= (int) $job["job_id"] ?>"
-                    <?= $job_id == $job["job_id"] ? "selected" : "" ?>
-                >
-                    <?= htmlspecialchars($job["arbeitgeber"] . " – " . $job["bezeichnung"]) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+        <section class="dashboard-bereich">
+            <h2>Arbeitseinsätze</h2>
 
-        <button type="submit">Anzeigen</button>
-        
-        <button
-            type="submit"
-            formaction="stundenzettel_druck.php"
-            formtarget="_blank"
-        >
-            Als PDF speichern
-        </button>
-    </form>
+            <?php if (empty($arbeitseinsaetze)): ?>
+                <p>Keine Arbeitseinsätze für diese Auswahl vorhanden.</p>
+            <?php else: ?>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Datum</th>
+                            <th>Job</th>
+                            <th>Beginn</th>
+                            <th>Ende</th>
+                            <th>Pause</th>
+                            <th>Arbeitszeit</th>
+                            <th>Verdienst</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($arbeitseinsaetze as $einsatz): ?>
+                            <?php
+                            $minuten = berechneArbeitsminuten(
+                                $einsatz["startzeit"],
+                                $einsatz["endzeit"],
+                                $einsatz["pause"]
+                            );
+                            $verdienst = berechneVerdienst($minuten, $einsatz["stundenlohn"]);
+                            ?>
+                            <tr>
+                                <td><?= date("d.m.Y", strtotime($einsatz["datum"])) ?></td>
+                                <td><?= htmlspecialchars($einsatz["arbeitgeber"] . " – " . $einsatz["bezeichnung"], ENT_QUOTES, "UTF-8") ?></td>
+                                <td><?= htmlspecialchars(substr($einsatz["startzeit"], 0, 5), ENT_QUOTES, "UTF-8") ?></td>
+                                <td><?= htmlspecialchars(substr($einsatz["endzeit"], 0, 5), ENT_QUOTES, "UTF-8") ?></td>
+                                <td><?= (int) $einsatz["pause"] ?> Min.</td>
+                                <td><?= intdiv((int) $minuten, 60) ?> Std. <?= (int) $minuten % 60 ?> Min.</td>
+                                <td><?= number_format($verdienst, 2, ",", ".") ?> €</td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </section>
 
-    <h2>Arbeitseinsätze</h2>
-
-    <?php if (empty($arbeitseinsaetze)): ?>
-        <p>Keine Arbeitseinsätze für diese Auswahl vorhanden.</p>
-    <?php else: ?>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Datum</th>
-                    <th>Job</th>
-                    <th>Beginn</th>
-                    <th>Ende</th>
-                    <th>Pause</th>
-                    <th>Arbeitszeit</th>
-                    <th>Verdienst</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($arbeitseinsaetze as $einsatz): ?>
-                    <?php
-                        $arbeitsminuten = berechneArbeitsminuten(
-                            $einsatz["startzeit"],
-                            $einsatz["endzeit"],
-                            $einsatz["pause"]
-                        );
-
-                        $verdienst = berechneVerdienst(
-                            $arbeitsminuten,
-                            $einsatz["stundenlohn"]
-                        );
-                    ?>
-
-                    <tr>
-                        <td><?= date("d.m.Y", strtotime($einsatz["datum"])) ?></td>
-                        <td>
-                            <?= htmlspecialchars($einsatz["arbeitgeber"] . " – " . $einsatz["bezeichnung"]) ?>
-                        </td>
-                        <td><?= htmlspecialchars(substr($einsatz["startzeit"], 0, 5)) ?></td>
-                        <td><?= htmlspecialchars(substr($einsatz["endzeit"], 0, 5)) ?></td>
-                        <td><?= (int) $einsatz["pause"] ?> Min.</td>
-                        <td>
-                            <?= intdiv((int) $arbeitsminuten, 60) ?> Std.
-                            <?= (int) $arbeitsminuten % 60 ?> Min.
-                        </td>
-                        <td><?= number_format($verdienst, 2, ",", ".") ?> €</td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-
-    <?php endif; ?>
-
-    <h2>Gesamtsummen</h2>
-
-    <p>
-        <strong>Gesamtarbeitszeit:</strong>
-        <?= intdiv((int) $gesamtsummen["minuten"], 60) ?> Std.
-        <?= (int) $gesamtsummen["minuten"] % 60 ?> Min.
-    </p>
-
-    <p>
-        <strong>Gesamtverdienst:</strong>
-        <?= number_format($gesamtsummen["verdienst"], 2, ",", ".") ?> €
-    </p>
+        <section class="dashboard-bereich">
+            <h2>Gesamtsummen</h2>
+            <p>Gesamtarbeitszeit: <strong><?= intdiv((int) $gesamtsummen["minuten"], 60) ?> Std. <?= (int) $gesamtsummen["minuten"] % 60 ?> Min.</strong></p>
+            <p>Gesamtverdienst: <strong><?= number_format($gesamtsummen["verdienst"], 2, ",", ".") ?> €</strong></p>
+        </section>
+    </main>
 
 </body>
 </html>
