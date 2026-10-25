@@ -7,9 +7,13 @@ require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../models/Arbeitseinsatz.php";
 require_once __DIR__ . "/../models/Job.php";
 require_once __DIR__ . "/../services/ArbeitszeitService.php";
+require_once __DIR__ . "/../services/ArbeitseinsatzValidierung.php";
 
 // Ausgewählten Monat aus der URL auslesen
 $monat = $_GET["monat"] ?? date("Y-m");
+
+// Fehlermeldung für ungültige Eingaben
+$fehlermeldung = "";
 
 // Monatsangabe überprüfen
 if ($monat != "alle" && !preg_match("/^\d{4}-(0[1-9]|1[0-2])$/", $monat)) {
@@ -25,11 +29,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
     $endzeit = $_POST["endzeit"] ?? "";
     $pause = $_POST["pause"] ?? 0;
 
-    if (filter_var($job_id, FILTER_VALIDATE_INT) && $job_id > 0
-        && $datum != "" && $startzeit != "" && $endzeit != ""
-        && filter_var($pause, FILTER_VALIDATE_INT) !== false
-        && $pause >= 0
-        && $endzeit > $startzeit) {
+    if (validiereArbeitseinsatz(
+        $job_id,
+        $datum,
+        $startzeit,
+        $endzeit,
+        $pause
+    )) {
 
         // Ausgewählten Job über das Model laden
         $job = jobNachIdLaden($pdo, (int) $job_id);
@@ -47,11 +53,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
                 (float) $job["stundenlohn"]
             );
 
+
             header("Location: arbeitseinsaetze.php");
             exit;
+
+        } else {
+            $fehlermeldung = "Der ausgewählte Job existiert nicht.";
         }
+
+    } else {
+        $fehlermeldung = "Arbeitseinsatz konnte nicht gespeichert werden. Bitte überprüfe Datum, Uhrzeiten und Pausenzeit.";
     }
 }
+
 
 // Arbeitseinsatz aktualisieren
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
@@ -63,12 +77,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
     $endzeit = $_POST["endzeit"] ?? "";
     $pause = $_POST["pause"] ?? 0;
 
-    if (filter_var($einsatz_id, FILTER_VALIDATE_INT) && $einsatz_id > 0
-        && filter_var($job_id, FILTER_VALIDATE_INT) && $job_id > 0
-        && $datum != "" && $startzeit != "" && $endzeit != ""
-        && filter_var($pause, FILTER_VALIDATE_INT) !== false
-        && $pause >= 0
-        && $endzeit > $startzeit) {
+    if (
+        filter_var(
+            $einsatz_id,
+            FILTER_VALIDATE_INT,
+            ["options" => ["min_range" => 1]]
+        ) !== false
+        && validiereArbeitseinsatz(
+            $job_id,
+            $datum,
+            $startzeit,
+            $endzeit,
+            $pause
+        )
+    ) {
 
         // Ausgewählten Job über das Model laden
         $job = jobNachIdLaden($pdo, (int) $job_id);
@@ -87,11 +109,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
             (float) $job["stundenlohn"]
         );
 
+
             header("Location: arbeitseinsaetze.php");
             exit;
+
+        } else {
+            $fehlermeldung = "Der ausgewählte Job existiert nicht.";
         }
+
+    } else {
+        $fehlermeldung = "Arbeitseinsatz konnte nicht aktualisiert werden. Bitte überprüfe Datum, Uhrzeiten und Pausenzeit.";
     }
 }
+
 
 // Arbeitseinsatz zum Bearbeiten laden
 $einsatz_bearbeiten = null;
@@ -115,15 +145,6 @@ $jobs = alleJobsLaden($pdo);
 
 // Gespeicherte Arbeitseinsätze über das Model laden
 $arbeitseinsaetze = alleArbeitseinsaetzeLaden($pdo, $monat);
-
-// Gesamtsummen über den Service berechnen
-$gesamtsummen = berechneGesamtsummen($arbeitseinsaetze);
-
-// Arbeitszeit und Verdienst pro Job berechnen
-$jobSummen = berechneJobSummen($arbeitseinsaetze);
-
-// Job-Summen über den Service berechnen
-$jobSummen = berechneJobSummen($arbeitseinsaetze);
 
 // Arbeitseinsatz löschen
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["loeschen"])) {
