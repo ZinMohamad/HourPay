@@ -39,6 +39,14 @@
         </select>
 
         <button type="submit">Anzeigen</button>
+        
+        <button
+            type="submit"
+            formaction="stundenzettel_druck.php"
+            formtarget="_blank"
+        >
+            Als PDF speichern
+        </button>
     </form>
 
     <h2>Arbeitseinsätze</h2>
