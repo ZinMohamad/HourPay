@@ -26,29 +26,39 @@ function arbeitseinsatzSpeichern(
     ]);
 }
 
-// Gespeicherte Arbeitseinsätze laden
-function alleArbeitseinsaetzeLaden(PDO $pdo, string $monat): array
+
+ // Gespeicherte Arbeitseinsätze laden und optional filtern
+function alleArbeitseinsaetzeLaden(PDO $pdo, string $monat = "alle", int $job_id = 0): array
 {
     $sql = "SELECT a.*, j.arbeitgeber, j.bezeichnung
             FROM arbeitseinsaetze a
-            JOIN jobs j ON a.job_id = j.job_id";
+            JOIN jobs j ON a.job_id = j.job_id
+            WHERE 1 = 1";
 
-    if ($monat != "alle") {
-        $sql .= " WHERE DATE_FORMAT(a.datum, '%Y-%m') = ?";
+    $parameter = [];
+
+    // Optional nach Monat filtern
+    if ($monat !== "alle") {
+        $sql .= " AND a.datum >= ? AND a.datum < ?";
+        $monatsbeginn = new DateTimeImmutable($monat . "-01");
+        $parameter[] = $monatsbeginn->format("Y-m-d");
+        $parameter[] = $monatsbeginn->modify("+1 month")->format("Y-m-d");
+    }
+
+    // Optional nach Job filtern
+    if ($job_id > 0) {
+        $sql .= " AND a.job_id = ?";
+        $parameter[] = $job_id;
     }
 
     $sql .= " ORDER BY a.datum DESC, a.startzeit DESC";
 
     $stmt = $pdo->prepare($sql);
-
-    if ($monat == "alle") {
-        $stmt->execute();
-    } else {
-        $stmt->execute([$monat]);
-    }
+    $stmt->execute($parameter);
 
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
 
 // Vorhandenen Arbeitseinsatz aktualisieren
 function arbeitseinsatzAktualisieren(
