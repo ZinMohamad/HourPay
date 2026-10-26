@@ -67,3 +67,16 @@ function jobNachIdLaden(PDO $pdo, int $job_id): array|false
 
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
+
+// Prüfen, ob der Job bereits existiert
+function jobExistiertBereits(PDO $pdo, string $arbeitgeber, string $bezeichnung, int $job_id = 0): bool
+{
+    $sql = "SELECT COUNT(*) FROM jobs
+            WHERE arbeitgeber = ? AND bezeichnung = ?
+            AND job_id != ?";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$arbeitgeber, $bezeichnung, $job_id]);
+
+    return $stmt->fetchColumn() > 0;
+}

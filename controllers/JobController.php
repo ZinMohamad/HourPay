@@ -2,6 +2,9 @@
 require_once __DIR__ . "/../config/database.php";
 require_once __DIR__ . "/../models/Job.php";
 
+// Fehlermeldung für ungültige Eingaben
+$fehlermeldung = "";
+
 // Job speichern
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
 
@@ -10,12 +13,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
     $stundenlohn = $_POST["stundenlohn"] ?? "";
 
     if ($arbeitgeber != "" && $bezeichnung != ""
-        && is_numeric($stundenlohn) && $stundenlohn >= 0) {
+        && is_numeric($stundenlohn) && $stundenlohn >= 0) {          
+            if (jobExistiertBereits($pdo, $arbeitgeber, $bezeichnung)) {
+                $fehlermeldung = "Dieser Job existiert bereits.";
+            } else {
+                jobSpeichern($pdo, $arbeitgeber, $bezeichnung, (float) $stundenlohn);
 
-        jobSpeichern($pdo, $arbeitgeber, $bezeichnung, (float) $stundenlohn);
-
-        header("Location: jobs.php");
-        exit;
+                header("Location: jobs.php");
+                exit;
+            }    
     }
 }
 
@@ -29,12 +35,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
 
     if (filter_var($job_id, FILTER_VALIDATE_INT) && $job_id > 0
         && $arbeitgeber != "" && $bezeichnung != ""
-        && is_numeric($stundenlohn) && $stundenlohn >= 0) {
+        && is_numeric($stundenlohn) && $stundenlohn >= 0) {           
+            if (jobExistiertBereits($pdo, $arbeitgeber, $bezeichnung, (int) $job_id)) {
+                $fehlermeldung = "Ein Job mit diesem Arbeitgeber und dieser Bezeichnung existiert bereits.";
+            } else {
+                jobAktualisieren($pdo, (int) $job_id, $arbeitgeber, $bezeichnung, (float) $stundenlohn);
 
-        jobAktualisieren($pdo, (int) $job_id, $arbeitgeber, $bezeichnung, (float) $stundenlohn);
-
-        header("Location: jobs.php");
-        exit;
+                header("Location: jobs.php");
+                exit;
+            }        
     }
 }
 
