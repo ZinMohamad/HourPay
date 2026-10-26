@@ -264,6 +264,69 @@ tbody tr:hover {
     box-shadow: none;
 }
 
+/* Formular für Arbeitseinsätze */
+
+.einsatz-formular .formular-feld {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.einsatz-formular .formular-zeile {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.einsatz-formular label {
+    margin: 0 0 6px;
+}
+
+.einsatz-formular input,
+.einsatz-formular select {
+    width: 100%;
+    min-width: 0;
+    margin: 0 0 16px;
+}
+
+.einsatz-formular .formular-aktionen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+@media (max-width: 600px) {
+    .einsatz-formular .formular-zeile {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+/* Arbeitseinsatztabelle */
+
+.arbeitseinsaetze-tabelle {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.arbeitseinsaetze-tabelle table {
+    width: max-content;
+    min-width: 100%;
+}
+
+.arbeitseinsaetze-tabelle th,
+.arbeitseinsaetze-tabelle td {
+    white-space: nowrap;
+}
+
+.arbeitseinsaetze-tabelle .tabellen-aktionen {
+    flex-wrap: nowrap;
+}
+
+.arbeitseinsaetze-tabelle .tabellen-aktionen button {
+    white-space: nowrap;
+}
+
 /* Fehlermeldungen */
 
 .fehlermeldung {
