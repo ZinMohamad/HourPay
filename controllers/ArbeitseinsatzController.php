@@ -20,14 +20,19 @@ if ($monat != "alle" && !preg_match("/^\d{4}-(0[1-9]|1[0-2])$/", $monat)) {
     $monat = date("Y-m");
 }
 
-// Arbeitseinsatz speichern
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
+// Gemeinsame Eingaben auslesen
+if ($_SERVER["REQUEST_METHOD"] === "POST"
+    && (isset($_POST["speichern"]) || isset($_POST["aktualisieren"]))) {
 
     $job_id = $_POST["job_id"] ?? 0;
     $datum = $_POST["datum"] ?? "";
     $startzeit = $_POST["startzeit"] ?? "";
     $endzeit = $_POST["endzeit"] ?? "";
     $pause = $_POST["pause"] ?? 0;
+}
+
+// Arbeitseinsatz speichern
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
 
     if (validiereArbeitseinsatz(
         $job_id,
@@ -38,11 +43,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
     )) {
 
         // Ausgewählten Job über das Model laden
-        $job = jobNachIdLaden($pdo, (int) $job_id);
+        $job = jobNachIdLaden($pdo, (int) $job_id);       
+        if ($job && arbeitseinsatzExistiertBereits(
+            $pdo,
+            (int) $job_id,
+            $datum,
+            $startzeit,
+            $endzeit
+        )) {
+            $fehlermeldung = "Für diesen Job überschneidet sich der Arbeitseinsatz mit einem bereits gespeicherten Einsatz.";
+        } elseif ($job) {
 
-        if ($job) {
-
-            // Arbeitseinsatz über das Model speichern
+        // Arbeitseinsatz über das Model speichern
             arbeitseinsatzSpeichern(
                 $pdo,
                 (int) $job_id,
@@ -66,16 +78,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["speichern"])) {
     }
 }
 
-
 // Arbeitseinsatz aktualisieren
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
 
     $einsatz_id = $_POST["einsatz_id"] ?? 0;
-    $job_id = $_POST["job_id"] ?? 0;
-    $datum = $_POST["datum"] ?? "";
-    $startzeit = $_POST["startzeit"] ?? "";
-    $endzeit = $_POST["endzeit"] ?? "";
-    $pause = $_POST["pause"] ?? 0;
 
     if (
         filter_var(
@@ -94,8 +100,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
 
         // Ausgewählten Job über das Model laden
         $job = jobNachIdLaden($pdo, (int) $job_id);
-
-        if ($job) {
+        
+        if ($job && arbeitseinsatzExistiertBereits(
+            $pdo,
+            (int) $job_id,
+            $datum,
+            $startzeit,
+            $endzeit,
+            (int) $einsatz_id
+        )) {
+            $fehlermeldung = "Für diesen Job überschneidet sich der Arbeitseinsatz mit einem bereits gespeicherten Einsatz.";
+        } elseif ($job) {
 
         // Arbeitseinsatz über das Model aktualisieren
         arbeitseinsatzAktualisieren(
@@ -122,6 +137,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["aktualisieren"])) {
     }
 }
 
+// Arbeitseinsatz löschen
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["loeschen"])) {
+
+    $einsatz_id = $_POST["einsatz_id"] ?? 0;
+
+    if (filter_var($einsatz_id, FILTER_VALIDATE_INT) && $einsatz_id > 0) {
+
+        // Arbeitseinsatz über das Model löschen
+        arbeitseinsatzLoeschen($pdo, (int) $einsatz_id);
+
+        header("Location: arbeitseinsaetze.php");
+        exit;
+    }
+}
 
 // Arbeitseinsatz zum Bearbeiten laden
 $einsatz_bearbeiten = null;
@@ -145,18 +174,3 @@ $jobs = alleJobsLaden($pdo);
 
 // Gespeicherte Arbeitseinsätze über das Model laden
 $arbeitseinsaetze = alleArbeitseinsaetzeLaden($pdo, $monat);
-
-// Arbeitseinsatz löschen
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["loeschen"])) {
-
-    $einsatz_id = $_POST["einsatz_id"] ?? 0;
-
-    if (filter_var($einsatz_id, FILTER_VALIDATE_INT) && $einsatz_id > 0) {
-
-        // Arbeitseinsatz über das Model löschen
-        arbeitseinsatzLoeschen($pdo, (int) $einsatz_id);
-
-        header("Location: arbeitseinsaetze.php");
-        exit;
-    }
-}

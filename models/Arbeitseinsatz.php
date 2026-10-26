@@ -110,3 +110,32 @@ function arbeitseinsatzNachIdLaden(PDO $pdo, int $einsatz_id): array|false
 
     return $stmt->fetch(PDO::FETCH_ASSOC);
 }
+
+
+
+ // Prüfen, ob sich Arbeitseinsätze überschneiden
+function arbeitseinsatzExistiertBereits(
+    PDO $pdo,
+    int $job_id,
+    string $datum,
+    string $startzeit,
+    string $endzeit,
+    int $einsatz_id = 0
+): bool {
+    $sql = "SELECT COUNT(*) FROM arbeitseinsaetze
+            WHERE job_id = ? AND datum = ?
+            AND startzeit < ? AND endzeit > ?
+            AND einsatz_id != ?";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([
+        $job_id,
+        $datum,
+        $endzeit,
+        $startzeit,
+        $einsatz_id
+    ]);
+
+    return $stmt->fetchColumn() > 0;
+}
+
