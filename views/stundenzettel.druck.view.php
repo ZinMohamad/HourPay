@@ -41,19 +41,7 @@
             <div class="info">
                 <div class="info-label">Job</div>
                 <div class="info-wert">
-                    <?php
-                    $jobName = "Alle Jobs";
-
-                    foreach ($jobs as $job) {
-                        if ((int) $job["job_id"] === $job_id) {
-                            $jobName = $job["arbeitgeber"]
-                                . " – " . $job["bezeichnung"];
-                            break;
-                        }
-                    }
-
-                    echo htmlspecialchars($jobName);
-                    ?>
+                    <?= htmlspecialchars($jobName, ENT_QUOTES, "UTF-8") ?>
                 </div>
             </div>
         </section>

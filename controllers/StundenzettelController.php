@@ -1,4 +1,3 @@
-
 <?php
 
 // Datenbankverbindung laden
@@ -32,6 +31,16 @@ if ($job_id === false) {
 
 // Jobs für die Auswahl laden
 $jobs = alleJobsLaden($pdo);
+
+// Ausgewählten Jobnamen ermitteln
+$jobName = "Alle Jobs";
+
+foreach ($jobs as $job) {
+    if ((int) $job["job_id"] === $job_id) {
+        $jobName = $job["arbeitgeber"] . " – " . $job["bezeichnung"];
+        break;
+    }
+}
 
 // Arbeitseinsätze nach Monat und Job laden
 $arbeitseinsaetze = alleArbeitseinsaetzeLaden($pdo, $monat, $job_id);
