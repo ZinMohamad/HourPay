@@ -47,39 +47,3 @@ function berechneGesamtsummen($arbeitseinsaetze)
     ];
 }
 
-
-function berechneJobSummen($arbeitseinsaetze)
-{
-    $jobSummen = [];
-
-    foreach ($arbeitseinsaetze as $einsatz) {
-
-        $arbeitsminuten = berechneArbeitsminuten(
-            $einsatz["startzeit"],
-            $einsatz["endzeit"],
-            $einsatz["pause"]
-        );
-
-        $verdienst = berechneVerdienst(
-            $arbeitsminuten,
-            $einsatz["stundenlohn"]
-        );
-
-        $job_id = $einsatz["job_id"];
-
-        if (!isset($jobSummen[$job_id])) {
-            $jobSummen[$job_id] = [
-                "arbeitgeber" => $einsatz["arbeitgeber"],
-                "bezeichnung" => $einsatz["bezeichnung"],
-                "minuten" => 0,
-                "verdienst" => 0
-            ];
-        }
-
-        $jobSummen[$job_id]["minuten"] += $arbeitsminuten;
-        $jobSummen[$job_id]["verdienst"] += $verdienst;
-    }
-
-    return $jobSummen;
-}
-
